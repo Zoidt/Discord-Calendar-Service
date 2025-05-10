@@ -16,7 +16,7 @@ MAKE_WEBHOOK_URL = getenv('MAKE_WEBHOOK_URL')
 
 # --- CONFIGURATION ---
 # !! IMPORTANT: Change this to the name of the channel your bot should listen to !!
-TARGET_CHANNEL_NAME = "your-calendar-input-channel"
+TARGET_CHANNEL_NAME = "calendar-agent"
 # Consider using a more specific model if needed, like 'gemini-1.5-pro-latest' for complex tasks
 GEMINI_MODEL_NAME = 'gemini-2.0-flash' # Good balance of speed and capability
 
@@ -87,11 +87,12 @@ async def on_message(message):
             prompt = f"""
             You are an intelligent assistant that extracts calendar event details from text.
             The output MUST be a valid JSON object.
-            The JSON object should have the following keys:
-            - "summary": (string) The title or summary of the event.
-            - "start_datetime": (string) The start date and time in ISO 8601 format (YYYY-MM-DDTHH:MM:SS).
-            - "end_datetime": (string) The end date and time in ISO 8601 format (YYYY-MM-DDTHH:MM:SS).
-            - "description": (string, optional) A more detailed description of the event.
+            The JSON object must have the following keys:
+            - "title": (string) The title or summary of the event.
+            - "description": (string) A more detailed description of the event.
+            - "start_datetime": (string) The start date and time in ISO 8601 format (YYYY-MM-DDTHH:MM:SS). in EDT timezone.
+            - "end_datetime": (string) The end date and time in ISO 8601 format (YYYY-MM-DDTHH:MM:SS). in EDT timezone.
+            - "duration": (string, optional) The duration of the event. format (HH:mm)
             - "location": (string, optional) The location of the event.
 
             Guidelines:
@@ -101,6 +102,9 @@ async def on_message(message):
             - If only a start datetime is provided, assume the event is 1 hour long for the end_datetime.
             - If the text does not seem to describe a calendar event, return an empty JSON object {{}}.
 
+            NOTES: ENSURE ALL TIMEZONES ARE EDT.
+
+            
             Parse the following text:
             "{message_content}"
 
@@ -114,7 +118,7 @@ async def on_message(message):
             # Clean up the thinking reaction
             try:
                 await message.remove_reaction('🤔', client.user)
-            except discord.NotFound:
+            except main.NotFound:
                 pass # Reaction might have been removed by something else or already gone
 
             gemini_response_text = response.text
@@ -172,7 +176,7 @@ async def on_message(message):
             print(f"Gemini API call failed due to blocked prompt: {e}")
             try:
                 await message.remove_reaction('🤔', client.user)
-            except discord.NotFound:
+            except main.NotFound:
                 pass
             await message.add_reaction('🚫') # Blocked by safety
             await message.channel.send("Sorry, your request was blocked by content safety filters.")
@@ -182,7 +186,7 @@ async def on_message(message):
             traceback.print_exc() # Log the full error
             try:
                 await message.remove_reaction('🤔', client.user)
-            except discord.NotFound:
+            except main.NotFound:
                 pass
             await message.add_reaction('❌') # General error
             await message.channel.send(f"An unexpected error occurred: {str(e)[:1000]}")
