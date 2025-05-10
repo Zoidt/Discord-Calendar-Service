@@ -18,7 +18,7 @@ MAKE_WEBHOOK_URL = getenv('MAKE_WEBHOOK_URL')
 # !! IMPORTANT: Change this to the name of the channel your bot should listen to !!
 TARGET_CHANNEL_NAME = "your-calendar-input-channel"
 # Consider using a more specific model if needed, like 'gemini-1.5-pro-latest' for complex tasks
-GEMINI_MODEL_NAME = 'gemini-1.5-flash-latest' # Good balance of speed and capability
+GEMINI_MODEL_NAME = 'gemini-2.0-flash' # Good balance of speed and capability
 
 # Configure Gemini client
 if GEMINI_API_KEY:
