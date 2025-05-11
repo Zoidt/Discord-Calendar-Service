@@ -6,6 +6,7 @@ import asyncio # Not strictly needed for this version, but good for future async
 import aiohttp # For making asynchronous HTTP requests
 import google.generativeai as genai
 from datetime import datetime
+import pytz
 
 # Load environment variables from .env file
 load_dotenv()
@@ -83,7 +84,11 @@ async def on_message(message):
         try:
             # 1. Construct the prompt for Gemini
             # The date helps Gemini resolve relative dates like "today" or "tomorrow"
-            current_date_str = datetime.now().strftime('%Y-%m-%d')
+            eastern_tz = pytz.timezone('America/New_York')
+            current_time_et = datetime.now(eastern_tz)
+            # Provides Gemini with the actual current time in Eastern for context
+            current_date_context_str = current_time_et.isoformat()
+
             prompt = f"""
             You are an intelligent assistant that extracts calendar event details from text.
             The output MUST be a valid JSON object.
@@ -97,13 +102,12 @@ async def on_message(message):
 
             Guidelines:
             - If a value for an optional field (description, location) is not present, use null or omit the key.
-            - If only a date is provided for the start, assume it's an all-day event for that date. For example, "event on 2025-12-25" means start_datetime: "2025-12-25T00:00:00" and end_datetime: "2025-12-25T23:59:59".
-            - If only a start time is provided without a specific date, try to infer the date based on context like "today", "tomorrow". The current date is {current_date_str}.
+            - If only a date is provided for the start, assume it's an all-day event for that date. For example, "event on 2025-12-25" means start_datetime: "2025-12-25T00:00:00-05:00" and end_datetime: "2025-12-25T23:59:59-05:00".
+            - If only a start time is provided without a specific date, try to infer the date based on context like "today", "tomorrow". The current date is {current_date_context_str}.
             - If only a start datetime is provided, assume the event is 1 hour long for the end_datetime.
             - If the text does not seem to describe a calendar event, return an empty JSON object {{}}.
 
             NOTES: ENSURE ALL TIMEZONES ARE EDT.
-            The current date is {current_date_str}.
 
 
             Parse the following text:
