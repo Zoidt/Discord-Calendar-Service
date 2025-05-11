@@ -103,8 +103,9 @@ async def on_message(message):
             - If the text does not seem to describe a calendar event, return an empty JSON object {{}}.
 
             NOTES: ENSURE ALL TIMEZONES ARE EDT.
+            The current date is {current_date_str}.
 
-            
+
             Parse the following text:
             "{message_content}"
 
